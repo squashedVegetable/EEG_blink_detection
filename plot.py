@@ -71,13 +71,13 @@ plt.plot(df['Time (s)'], theta, label='theta')
 #plt.plot(df['Time (s)'], beta, label='beta')
 #plt.plot(df['Time (s)'], gamma, label='gamma')
 
+def band_power(low, high):
+    mask = (freqs >= low) & (freqs <= high)
+    return np.sum(np.abs(X[mask])**2)
+
 #FFT to extract the sgnals
-N = len(df['FP1']) #normilization
 ft_data = df['FP1'].values
 time = df['Time (s)'].values
-
-#ft_data = np.fft.rfft(ft_data)
-#freq = np.fft.rfftfreq(N, 1/SPS) 
 
 fft_results = []
 time_centers = []
@@ -85,34 +85,12 @@ time_centers = []
 X_features = []
 y_labels = []
 
-
-'''
-for start in range(0, len(x) - window_size, step_size):
-    end = start + window_size
-    window = x[start:end]
-
-    # Zeitbereich des Fensters
-    t_start = time[start]
-    t_end = time[end]
-
-    # Label: Blink im Fenster?
-    label = int(any(
-        (blinks['Time (s)'] >= t_start) &
-        (blinks['Time (s)'] <= t_end) &
-        (blinks['blink'] == 1)
-    ))
-
-    y_labels.append(label)
-'''
-
-def band_power(low, high):
-    mask = (freqs >= low) & (freqs <= high)
-    return np.sum(np.abs(X[mask])**2)
-
+#loop for sliding window
 for start in range(0, len(ft_data) - window_size, step_size):
+    #sliding window 
     end = start + window_size
     window = ft_data[start:end]
-    window = window * np.hamming(len(window))
+    window = window * np.hamming(len(window)) #norminalazation
 
     # FFT
     X = np.fft.rfft(window)
@@ -124,14 +102,11 @@ for start in range(0, len(ft_data) - window_size, step_size):
     # mean value of the window
     t_center = df['Time (s)'].iloc[start:end].mean()
     time_centers.append(t_center)
-    
-    t_start = time[start]
-    t_end = time[end-1]
-    
-    # Label: Blink im Fenster?
+        
+    # check if there is a true label in the time frame
     label = int(any(
-        (blinks['Time (s)'] >= t_start) &
-        (blinks['Time (s)'] <= t_end) &
+        (blinks['Time (s)'] >= time[start]) &
+        (blinks['Time (s)'] <= time[end-1]) &
         (blinks['blink'] == 1)
     ))
 
@@ -145,6 +120,7 @@ for start in range(0, len(ft_data) - window_size, step_size):
         skew(window),
         kurtosis(window),
 
+        #relevant: delta and parts of theta waves. Since blinking is a low frequency movement
         band_power(0.5, 4),   # delta
         band_power(4, 8),     # theta
         #band_power(8, 13),    # alpha
@@ -167,20 +143,20 @@ for index, row in blinks.iterrows():
     plt.axvline(x=aligned_time, linestyle = "--", color='red', alpha=0.5, label='Blink' if index == 0 else "")
     #idx = (np.abs(df['Time (s)'] - row['Time (s)'])).argmin()
 
-
 plt.grid(True)
 plt.legend()
 plt.show()
 
 fft_results = np.array(fft_results).T  
 
-max_freq = 30  
+max_freq = 30 
 mask = freqs <= max_freq
 freqs_limited = freqs[mask]
 fft_limited = fft_results[mask, :]
 
 plt.figure()
 plt.pcolormesh(time_centers, freqs_limited, fft_limited)# shading='gouraud')
+
 '''
 for index, row in blinks.iterrows():
     if row['blink'] == 0:
@@ -199,6 +175,8 @@ plt.title('Sliding Window FFT (Spectrogram)')
 plt.colorbar(label='Amplitude')
 plt.show()
 
+
+#machine learning part
 X_train, X_test, y_train, y_test = train_test_split(
     X_features, y_labels, test_size=0.2, random_state=42
 )
