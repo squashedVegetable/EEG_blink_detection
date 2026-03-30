@@ -31,7 +31,7 @@ def notch_filter(data, quality=30):
 
 X_features = []
 y_labels = []
-window_size = int(0.5 * SPS) #window, in which blinking is analized
+window_size = int(0.8 * SPS) #window, in which blinking is analized
 step_size = int(0.1 * SPS)
 
 fileNumber = 0
@@ -129,7 +129,7 @@ while fileNumber <=18: #exluding file 19, to check if the ML is correct
 
             #relevant: delta and parts of theta waves. Since blinking is a low frequency movement
             band_power(0.5, 4),   # delta
-            band_power(4, 8),     # theta
+            #band_power(4, 8),     # theta
             #band_power(8, 13),    # alpha
             #band_power(13, 30),   # beta
             #band_power(30, 70),  # gamma
@@ -162,7 +162,7 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-clf = RandomForestClassifier(n_estimators=100)
+clf = RandomForestClassifier(n_estimators=400)
 clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)

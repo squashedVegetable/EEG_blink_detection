@@ -41,6 +41,7 @@ dataFile = 'EEG-IO/S' + fileNumber + '_data.csv'
 labelsFile = 'EEG-IO/S' + fileNumber + '_labels.csv'
 
 df = pd.read_csv(dataFile, usecols=[0, 1], sep=';')
+
 blinks = pd.read_csv(labelsFile)
 corrupted = []
 
@@ -50,7 +51,11 @@ if(blinks.columns[1].strip() == '1'):
     val = blinks.iloc[0].values
     corrupted.append((float(val[0]), float(val[1])))
     blinks = pd.read_csv(labelsFile, skiprows=2, names=['Time (s)', 'blink'])
+blinks['blink'] = pd.to_numeric(blinks['blink'], errors='coerce')
+blinks['Time (s)'] = pd.to_numeric(blinks['Time (s)'], errors='coerce')
+
 '''read file end'''
+
 
 #Filter
 df['FP1'] = bandpass_filter(df['FP1'].values, 0.5, 70)
@@ -67,9 +72,9 @@ gamma = bandpass_filter(df['FP1'].values, 30, 100)
 
 plt.plot(df['Time (s)'], delta, label='delta')
 plt.plot(df['Time (s)'], theta, label='theta')
-#plt.plot(df['Time (s)'], alpha, label='alpha')
-#plt.plot(df['Time (s)'], beta, label='beta')
-#plt.plot(df['Time (s)'], gamma, label='gamma')
+plt.plot(df['Time (s)'], alpha, label='alpha')
+plt.plot(df['Time (s)'], beta, label='beta')
+plt.plot(df['Time (s)'], gamma, label='gamma')
 
 def band_power(low, high):
     mask = (freqs >= low) & (freqs <= high)
@@ -181,7 +186,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_features, y_labels, test_size=0.2, random_state=42
 )
 
-clf = RandomForestClassifier(n_estimators=100)
+clf = RandomForestClassifier(n_estimators=400)
 clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)

@@ -25,7 +25,7 @@ def notch_filter(data, quality=30):
 
 X_features = []
 y_labels = []
-window_size = int(0.5 * SPS) #window, in which blinking is analized
+window_size = int(0.8 * SPS) #window, in which blinking is analized
 step_size = int(0.1 * SPS)
 
 clf = joblib.load("blink_model.pkl")
@@ -63,7 +63,7 @@ for start in range(0, len(ft_data) - window_size, step_size):
         skew(window),
         kurtosis(window),
         band_power(0.5, 4),
-        band_power(4, 8),
+        #band_power(4, 8),
     ]
 
     X_new.append(features)
@@ -75,10 +75,11 @@ delta = bandpass_filter(df['FP1'].values, 0.5, 4)
 theta = bandpass_filter(df['FP1'].values, 4, 8)
 
 plt.plot(df['Time (s)'], delta, label='delta')
-plt.plot(df['Time (s)'], theta, label='theta')
+#plt.plot(df['Time (s)'], theta, label='theta')
+plt.grid(True)
 
 for t, pred in zip(time_centers, y_pred):
-    if pred == 1:
+    if pred ==1:
         plt.axvline(t, color='red', alpha=0.3)
 
 plt.legend()
