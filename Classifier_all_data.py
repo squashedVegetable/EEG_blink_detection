@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 
 SPS = 250
+fileToSkip = 10
 
 #Butterworth filter
 def bandpass_filter(data, low_f, high_f, order = 4):
@@ -24,7 +25,7 @@ def bandpass_filter(data, low_f, high_f, order = 4):
 #optional, maybe not needed: COMMON MODE REJECTION filter or 50Hz filter for european signals
 def notch_filter(data, quality=30):
     """Entfernt Netzstrom-Artefakte (50 Hz in Europa)"""
-    freq = 50 #50Hz
+    freq = 60 #60Hz USA
     b, a = iirnotch(freq, quality, SPS)
     return filtfilt(b, a, data)
 
@@ -35,7 +36,10 @@ window_size = int(0.8 * SPS) #window, in which blinking is analized
 step_size = int(0.1 * SPS)
 
 fileNumber = 0
-while fileNumber <=18: #exluding file 19, to check if the ML is correct
+while fileNumber <=19: #exluding file 19, to check if the ML is correct
+    if fileNumber == fileToSkip:
+        fileNumber = fileNumber +1
+        continue
     if fileNumber < 10: 
         filler_zero = "0"
     else:
@@ -79,6 +83,7 @@ while fileNumber <=18: #exluding file 19, to check if the ML is correct
     def band_power(low, high):
         mask = (freqs >= low) & (freqs <= high)
         return np.sum(np.abs(X[mask])**2)
+        #formula from a paper
 
     #FFT to extract the sgnals
     ft_data = df['FP1'].values
@@ -99,6 +104,7 @@ while fileNumber <=18: #exluding file 19, to check if the ML is correct
         if any(c_start <= time[start] and c_end >= time[end-1] for c_start, c_end in corrupted):
             continue
 
+
         # FFT
         X = np.fft.rfft(window)
         freqs = np.fft.rfftfreq(len(window), 1/SPS)
@@ -116,6 +122,14 @@ while fileNumber <=18: #exluding file 19, to check if the ML is correct
             (blinks['Time (s)'] <= time[end-1]) &
             (blinks['blink'] == 1)
         ).any())
+
+        #check if window is 1 second before or 1 second after a labeled blink
+        if (
+            (blinks['Time (s)'] >= time[start] - 0.3) &
+            (blinks['Time (s)'] <= time[end] + 0.3) &
+            (blinks['blink'] == 1)
+        ).any() and label == 0:
+            continue
 
         y_labels.append(label)
 

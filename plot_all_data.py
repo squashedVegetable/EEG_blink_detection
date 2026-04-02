@@ -19,7 +19,7 @@ def bandpass_filter(data, low_f, high_f, order = 4):
 #optional, maybe not needed: COMMON MODE REJECTION filter or 50Hz filter for european signals
 def notch_filter(data, quality=30):
     """Entfernt Netzstrom-Artefakte (50 Hz in Europa)"""
-    freq = 50 #50Hz
+    freq = 60 #50Hz europe, 60Hz USA
     b, a = iirnotch(freq, quality, SPS)
     return filtfilt(b, a, data)
 
