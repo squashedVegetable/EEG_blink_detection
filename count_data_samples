@@ -1,0 +1,15 @@
+import pandas as pd
+
+fileNumber = 0
+null_space = ""
+num_rows = 0
+while fileNumber < 20:
+    if fileNumber >= 10:
+        null_space = ""
+    else: 
+        null_space = "0"
+    df = pd.read_csv("EEG-IO/S" + null_space + str(fileNumber) +"_data.csv",  usecols=[0, 1], sep=';')
+    num_rows += len(df)
+    fileNumber+=1
+
+print(num_rows)

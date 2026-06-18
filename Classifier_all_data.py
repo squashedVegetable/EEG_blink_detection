@@ -7,12 +7,14 @@ from scipy.stats import skew, kurtosis
 import copy
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, accuracy_score
 from sklearn.preprocessing import StandardScaler
 import joblib
+import yaml
 
 SPS = 250
-fileToSkip = 10
+with open("file_to_skip.txt", "r") as f:
+    fileNumberToTest = f.read().strip()
 
 #Butterworth filter
 def bandpass_filter(data, low_f, high_f, order = 4):
@@ -29,15 +31,21 @@ def notch_filter(data, quality=30):
     b, a = iirnotch(freq, quality, SPS)
     return filtfilt(b, a, data)
 
-
 X_features = []
 y_labels = []
-window_size = int(0.8 * SPS) #window, in which blinking is analized
+
+#window, in which blinking is analized
+#default settings
+window_size = int(0.8 * SPS) 
 step_size = int(0.1 * SPS)
+with open("window_size.yaml", "r") as f:
+    config = yaml.safe_load(f)
+    window_size = int(config["window_size"] * SPS) #normally 0.8
+    step_size = int(config["step_size"] * SPS) #normally 0.1
 
 fileNumber = 0
-while fileNumber <=19: #exluding file 19, to check if the ML is correct
-    if fileNumber == fileToSkip:
+while fileNumber <=19: 
+    if fileNumber == fileNumberToTest:
         fileNumber = fileNumber +1
         continue
     if fileNumber < 10: 
@@ -62,6 +70,7 @@ while fileNumber <=19: #exluding file 19, to check if the ML is correct
     '''read file end'''
 
     #Filter
+    df['FP1'] = df['FP1'] - np.mean(df['FP1']) #DC Offset
     df['FP1'] = bandpass_filter(df['FP1'].values, 0.5, 70)
     df['FP1'] = notch_filter(df['FP1'].values)
 
@@ -103,7 +112,6 @@ while fileNumber <=19: #exluding file 19, to check if the ML is correct
         #skip corruted measurements
         if any(c_start <= time[start] and c_end >= time[end-1] for c_start, c_end in corrupted):
             continue
-
 
         # FFT
         X = np.fft.rfft(window)
@@ -167,21 +175,16 @@ while fileNumber <=19: #exluding file 19, to check if the ML is correct
     fileNumber = fileNumber+1
 
 
-#machine learning part
-X_train, X_test, y_train, y_test = train_test_split(
-    X_features, y_labels, test_size=0.2, random_state=42
-)
+X_features = np.array(X_features)
+y_labels = np.array(y_labels)
 
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+X_features_scaled = scaler.fit_transform(X_features)
 
 clf = RandomForestClassifier(n_estimators=400)
-clf.fit(X_train, y_train)
+clf.fit(X_features_scaled, y_labels)
 
-y_pred = clf.predict(X_test)
-
-print(classification_report(y_test, y_pred))
+print("model trained")
 
 joblib.dump(clf, "blink_model.pkl")
 joblib.dump(scaler, "scaler.pkl")

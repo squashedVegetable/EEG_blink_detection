@@ -61,7 +61,7 @@ with PdfPages("all_plots.pdf") as pdf:
         #df.plot(x='Time (s)', y='FP1')
 
         plt.plot(df['Time (s)'], delta, label='delta')
-        plt.plot(df['Time (s)'], theta, label='theta')
+        #plt.plot(df['Time (s)'], theta, label='theta')
         #plt.plot(df['Time (s)'], alpha, label='alpha')
         #plt.plot(df['Time (s)'], beta, label='beta')
         #plt.plot(df['Time (s)'], gamma, label='gamma')
@@ -80,6 +80,7 @@ with PdfPages("all_plots.pdf") as pdf:
         plt.legend()
         plt.title(f"Plot {filenumber}")
         pdf.savefig()   # appends current figure as a new page
+        plt.savefig(f"all_plots_png/Plot_{filenumber}.png")
         plt.close()     # VERY IMPORTANT (avoids memory issues)
         
         filenumber = filenumber +1

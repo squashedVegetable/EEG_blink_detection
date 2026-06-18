@@ -45,6 +45,7 @@ df = pd.read_csv(dataFile, usecols=[0, 1], sep=';')
 blinks = pd.read_csv(labelsFile)
 corrupted = []
 
+
 if(blinks.columns[1].strip() == '0'):
     blinks = pd.read_csv(labelsFile, skiprows=2, names=['Time (s)', 'blink'])
 if(blinks.columns[1].strip() == '1'):
@@ -56,8 +57,8 @@ blinks['Time (s)'] = pd.to_numeric(blinks['Time (s)'], errors='coerce')
 
 '''read file end'''
 
-
 #Filter
+df['FP1'] = df['FP1'] - np.mean(df['FP1']) #DC offset
 df['FP1'] = bandpass_filter(df['FP1'].values, 0.5, 70)
 df['FP1'] = notch_filter(df['FP1'].values)
 
@@ -71,10 +72,10 @@ gamma = bandpass_filter(df['FP1'].values, 30, 100)
 #df.plot(x='Time (s)', y='FP1')
 
 plt.plot(df['Time (s)'], delta, label='delta')
-plt.plot(df['Time (s)'], theta, label='theta')
-plt.plot(df['Time (s)'], alpha, label='alpha')
-plt.plot(df['Time (s)'], beta, label='beta')
-plt.plot(df['Time (s)'], gamma, label='gamma')
+#plt.plot(df['Time (s)'], theta, label='theta')
+#plt.plot(df['Time (s)'], alpha, label='alpha')
+#plt.plot(df['Time (s)'], beta, label='beta')
+#plt.plot(df['Time (s)'], gamma, label='gamma')
 
 def band_power(low, high):
     mask = (freqs >= low) & (freqs <= high)
@@ -138,6 +139,7 @@ for start in range(0, len(ft_data) - window_size, step_size):
 scaler = StandardScaler()
 X_features = scaler.fit_transform(X_features)
 
+
 for index, row in blinks.iterrows():
     if row['blink'] == 0:
         continue
@@ -148,6 +150,7 @@ for index, row in blinks.iterrows():
     plt.axvline(x=aligned_time, linestyle = "--", color='red', alpha=0.5, label='Blink' if index == 0 else "")
     #idx = (np.abs(df['Time (s)'] - row['Time (s)'])).argmin()
 
+    
 plt.grid(True)
 plt.legend()
 plt.show()
@@ -182,13 +185,10 @@ plt.show()
 
 
 #machine learning part
-X_train, X_test, y_train, y_test = train_test_split(
-    X_features, y_labels, test_size=0.2, random_state=42
+X_test, y_test = train_test_split(
+    X_features, y_labels, random_state=42
 )
 
 clf = RandomForestClassifier(n_estimators=400)
-clf.fit(X_train, y_train)
 
-y_pred = clf.predict(X_test)
-
-print(classification_report(y_test, y_pred))
+print(classification_report(y_test))

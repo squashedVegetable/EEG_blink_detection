@@ -77,7 +77,6 @@ if(blinks.columns[1].strip() == '1'):
 blinks['blink'] = pd.to_numeric(blinks['blink'], errors='coerce')
 blinks['Time (s)'] = pd.to_numeric(blinks['Time (s)'], errors='coerce')
 
-
 '''read file end'''
 
 #Filter
@@ -121,4 +120,3 @@ for i, label in enumerate(ax.xaxis.get_ticklabels()):
 plt.grid(True)
 plt.legend()
 plt.show()
-
